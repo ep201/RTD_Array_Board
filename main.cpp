@@ -100,13 +100,14 @@ int main()
     // printf("%i\n\r",epoch);
     // set_time(epoch);
 
+    CAN can(D10, D2);
 
-
-
+    //RTD0-3 are subarray 1
+    //RTD4-7 are subarray 2
     
-
     while (1) {
-    
+        
+
         time_t seconds = time(NULL);
         printf("%s\n\r", ctime(&seconds));
         //if( rtd.status( ) == 0 ) {
@@ -166,14 +167,14 @@ int main()
         // printf("Resistance2 is %f \n", resistance2);
 
         //rtd3 is good
-        rtd3.read_all( );
-        temp3_buffer = rtd3.temperature( );
-        if(temp3_buffer > -10.0 && temp3_buffer < 150.0){
-            temperature3 = temp3_buffer;
-        }
-        printf( " T3 = %f deg C \n\r",temperature3);
-        double resistance3 = rtd3.resistance();
-        printf("Resistance3 is %f \n", resistance3);        
+        // rtd3.read_all( );
+        // temp3_buffer = rtd3.temperature( );
+        // if(temp3_buffer > -10.0 && temp3_buffer < 150.0){
+        //     temperature3 = temp3_buffer;
+        // }
+        // printf( " T3 = %f deg C \n\r",temperature3);
+        // double resistance3 = rtd3.resistance();
+        // printf("Resistance3 is %f \n", resistance3);        
         
         
         // rtd4.read_all( );   //rtd4 is good
@@ -218,6 +219,81 @@ int main()
         
 
         printf("\n");
+        //CAN transmit code; 40-bit message, [39:32] are RTD ID (0 through 7), [31:0] are 32-bit temp val
+
+        //create CAN message for rtd0
+        char* rtd0_temp_array = (char*) &temp1_buffer;
+        char rtd0_can_buffer [6];
+        for(int i = 0; i < 4; i++){
+            rtd0_can_buffer[i] = rtd0_temp_array[i];
+        }
+        rtd0_can_buffer[4] = 0;
+
+        //rtd1
+        char* rtd1_temp_array = (char*) &temp1_buffer;
+        char rtd1_can_buffer [6];
+        for(int i = 0; i < 4; i++){
+            rtd1_can_buffer[i] = rtd1_temp_array[i];
+        }
+        rtd1_can_buffer[4] = 1;
+
+        //rtd2
+        // char* rtd2_temp_array = (char*) &temp2_buffer;
+        // char rtd2_can_buffer [6];
+        // for(int i = 0; i < 4; i++){
+        //     rtd2_can_buffer[i] = rtd2_temp_array[i];
+        // }
+        // rtd2_can_buffer[4] = 2;
+
+        //rtd3
+        char* rtd3_temp_array = (char*) &temp3_buffer;
+        char rtd3_can_buffer [6];
+        for(int i = 0; i < 4; i++){
+            rtd3_can_buffer[i] = rtd3_temp_array[i];
+        }
+        rtd3_can_buffer[4] = 3;
+
+        //rtd4
+        // char* rtd4_temp_array = (char*) &temp4_buffer;
+        // char rtd4_can_buffer [6];
+        // for(int i = 0; i < 4; i++){
+        //     rtd4_can_buffer[i] = rtd4_temp_array[i];
+        // }
+        // rtd4_can_buffer[4] = 4;
+
+        //rtd5
+        // char* rtd5_temp_array = (char*) &temp5_buffer;
+        // char rtd5_can_buffer [6];
+        // for(int i = 0; i < 4; i++){
+        //     rtd5_can_buffer[i] = rtd5_temp_array[i];
+        // }
+        // rtd5_can_buffer[4] = 5;
+
+        //rtd6
+        // char* rtd6_temp_array = (char*) &temp6_buffer;
+        // char rtd6_can_buffer [6];
+        // for(int i = 0; i < 4; i++){
+        //     rtd6_can_buffer[i] = rtd6_temp_array[i];
+        // }
+        // rtd6_can_buffer[4] = 6;
+
+        //rtd7
+        // char* rtd7_temp_array = (char*) &temp7_buffer;
+        // char rtd7_can_buffer [6];
+        // for(int i = 0; i < 4; i++){
+        //     rtd7_can_buffer[i] = rtd7_temp_array[i];
+        // }
+        // rtd7_can_buffer[4] = 7;
+        
+
+        can.write(CANMessage(0x620, rtd0_can_buffer, 5));
+        can.write(CANMessage(0x620, rtd1_can_buffer, 5));
+        //can.write(CANMessage(0x620, rtd2_can_buffer, 5));
+        //can.write(CANMessage(0x620, rtd3_can_buffer, 5));
+        //can.write(CANMessage(0x620, rtd4_can_buffer, 5));
+        //can.write(CANMessage(0x620, rtd5_can_buffer, 5));
+        //can.write(CANMessage(0x620, rtd06_can_buffer, 5));
+        //can.write(CANMessage(0x620, rtd7_can_buffer, 5));
         osDelay(1000);
  
     }
