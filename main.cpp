@@ -1,3 +1,6 @@
+//can_read_test
+//This code is for a separate board that reads the messages sent by the RTD board.
+//This code DOES NOT RUN on the RTD board. It is the code for another board that receives CAN messages.
 #include "mbed.h"
 #include <cstdint>
 #include <cstdio>
