@@ -43,8 +43,8 @@ int main()
     rtd7.configure( true, true, false, false, MAX31865_FAULT_DETECTION_NONE,
                    true, true, 0x0000, 0x7fff );
 
-    double temp0_buffer = 0; // set buffers to maintain values in case 0 or 400 ohms is read (error)
-    double temperature0 = 0;
+    float temp0_buffer = 0; // set buffers to maintain values in case 0 or 400 ohms is read (error)
+    float temperature0 = 0;
     double temp1_buffer = 0;
     double temperature1 = 0;
     double temp2_buffer = 0;
@@ -65,21 +65,20 @@ int main()
     int index = 0;
     BufferedSerial pc(USBTX, USBRX,19200);
     //printf("Enter a 10-digit decimal value for epoch time. Press j to enter.");
-    bool waiting = true;
-    do {
-        char myChar;
-        pc.read(&myChar, 1);
-        pc.write(&myChar, 1);
-        if (myChar == 'j') waiting = false;
-        else {
-            /* Put your character into epoch_buffer... assuming your data is sanitized, punk */
-            epoch_buffer[index] = myChar;
-            index++;
-        }
-    } while (waiting);
-    epochtime = atoi(epoch_buffer);
-    //char hello[] = "hello world\n\r";
-    //pc.write(hello, 12);
+    // bool waiting = true;
+    // do {
+    //     char myChar;
+    //     pc.read(&myChar, 1);
+    //     pc.write(&myChar, 1);
+    //     if (myChar == 'j') waiting = false;
+    //     else {
+    //         /* Put your character into epoch_buffer... assuming your data is sanitized, punk */
+    //         epoch_buffer[index] = myChar;
+    //         index++;
+    //     }
+    // } while (waiting);
+    // epochtime = atoi(epoch_buffer);
+   
 
     set_time(epochtime);
     osDelay(500);
@@ -100,6 +99,7 @@ int main()
     // printf("%i\n\r",epoch);
     // set_time(epoch);
 
+    //default CAN runs at 100 kHz (see can_api.c)
     CAN can(D10, D2);
 
     //RTD0-3 are subarray 1
@@ -115,12 +115,12 @@ int main()
             //rtd0 is good
 
             rtd0.read_all( );
-            temp0_buffer = rtd0.temperature( );
-            if(temp0_buffer > -10.0 && temp0_buffer < 150.0){
+            temp0_buffer = (float)rtd0.temperature( );
+            //if(temp0_buffer > -10.0 && temp0_buffer < 150.0){
                 temperature0 = temp0_buffer;
-            }
+            //}
             printf( " T0 = %f deg C \n\r",temperature0);
-            double resistance0 = rtd0.resistance();
+            float resistance0 = (float)rtd0.resistance();
             printf("Resistance0 is %f \n", resistance0);
 
             // osDelay(1000);
@@ -222,20 +222,26 @@ int main()
         //CAN transmit code; 40-bit message, [39:32] are RTD ID (0 through 7), [31:0] are 32-bit temp val
 
         //create CAN message for rtd0
-        char* rtd0_temp_array = (char*) &temp1_buffer;
-        char rtd0_can_buffer [6];
+        //try uint8_t
+        char* rtd0_temp_array = (char*) &temperature0; //CAN sends by bytes, so cast temp as array of chars (bytes)
+        char rtd0_can_buffer [5];   //create buffer because CAN message is concatenation of temp and rtd address
         for(int i = 0; i < 4; i++){
-            rtd0_can_buffer[i] = rtd0_temp_array[i];
+            rtd0_can_buffer[i] = rtd0_temp_array[i];    //populate CAN buffer with temp values
         }
-        rtd0_can_buffer[4] = 0;
+        rtd0_can_buffer[4] = 0; //set 5th value (bits 39:32) as rtd address
+        printf("buffer[0] = %x\n", rtd0_can_buffer[0]);
+        printf("buffer[1] = %x\n", rtd0_can_buffer[1]);
+        printf("buffer[2] = %x\n", rtd0_can_buffer[2]);
+        printf("buffer[3] = %x\n", rtd0_can_buffer[3]);
+        printf("buffer test: %f\n", *(float*)rtd0_can_buffer);
 
         //rtd1
-        char* rtd1_temp_array = (char*) &temp1_buffer;
-        char rtd1_can_buffer [6];
-        for(int i = 0; i < 4; i++){
-            rtd1_can_buffer[i] = rtd1_temp_array[i];
-        }
-        rtd1_can_buffer[4] = 1;
+        // char* rtd1_temp_array = (char*) &temp1_buffer;
+        // char rtd1_can_buffer [6];
+        // for(int i = 0; i < 4; i++){
+        //     rtd1_can_buffer[i] = rtd1_temp_array[i];
+        // }
+        // rtd1_can_buffer[4] = 1;
 
         //rtd2
         // char* rtd2_temp_array = (char*) &temp2_buffer;
@@ -287,7 +293,8 @@ int main()
         
 
         can.write(CANMessage(0x620, rtd0_can_buffer, 5));
-        can.write(CANMessage(0x620, rtd1_can_buffer, 5));
+        //CAN.read;
+        //can.write(CANMessage(0x620, rtd1_can_buffer, 5));
         //can.write(CANMessage(0x620, rtd2_can_buffer, 5));
         //can.write(CANMessage(0x620, rtd3_can_buffer, 5));
         //can.write(CANMessage(0x620, rtd4_can_buffer, 5));
