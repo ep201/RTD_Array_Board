@@ -103,6 +103,7 @@ int main()
     //default CAN runs at 100 kHz = 100 000 (see can_api.c)
     CAN can(D10, D2);
     CANMessage rx_msg;
+    
 
     //RTD0-3 are subarray 1
     //RTD4-7 are subarray 2
@@ -112,10 +113,8 @@ int main()
 
         // time_t seconds = time(NULL);
         // printf("%s\n\r", ctime(&seconds));
-        
-        //if( rtd0.status( ) == 0 ) {
-
-            rtd0.read_all( );
+         rtd0.read_all( );
+        if( rtd0.status( ) == 0 ) {
             temp0_buffer = (float)rtd0.temperature( );
             if(temp0_buffer > -10.0 && temp0_buffer < 150.0){
                 temperature0 = temp0_buffer;
@@ -124,35 +123,39 @@ int main()
             float resistance0 = (float)rtd0.resistance();
             printf("Resistance0 is %f \n", resistance0);
  
-        // } else
-        // {
-        //     printf( "RTD fault register: %d :\r\n",rtd0.status( ));
-        //     if( rtd0.status( ) & MAX31865_FAULT_HIGH_THRESHOLD ) {
-        //         printf( "RTD high threshold exceeded\r\n" );
-        //     } else if( rtd0.status( ) & MAX31865_FAULT_LOW_THRESHOLD ) {
-        //         printf( "RTD low threshold exceeded\r\n" );
-        //     } else if( rtd0.status( ) & MAX31865_FAULT_REFIN ) {
-        //         printf( "REFIN- > 0.85 x V_BIAS\r\n" );
-        //     } else if( rtd0.status( ) & MAX31865_FAULT_REFIN_FORCE ) {
-        //         printf( "REFIN- < 0.85 x V_BIAS, FORCE- open\r\n" );
-        //     } else if( rtd0.status( ) & MAX31865_FAULT_RTDIN_FORCE ) {
-        //         printf( "RTDIN- < 0.85 x V_BIAS, FORCE- open\r\n" );
-        //     } else if( rtd0.status( ) & MAX31865_FAULT_VOLTAGE ) {
-        //         printf( "Overvoltage/undervoltage fault\r\n");
-        //     } else {
-        //         printf( "Unknown fault; check connection\r\n" );
-        //     }
-        // }
+        } 
+        
+        else
+        {
+            printf( "RTD fault register: %d :\r\n",rtd0.status( ));
+            if( rtd0.status( ) & MAX31865_FAULT_HIGH_THRESHOLD ) {
+                printf( "RTD high threshold exceeded\r\n" );
+            } else if( rtd0.status( ) & MAX31865_FAULT_LOW_THRESHOLD ) {
+                printf( "RTD low threshold exceeded\r\n" );
+            } else if( rtd0.status( ) & MAX31865_FAULT_REFIN ) {
+                printf( "REFIN- > 0.85 x V_BIAS\r\n" );
+            } else if( rtd0.status( ) & MAX31865_FAULT_REFIN_FORCE ) {
+                printf( "REFIN- < 0.85 x V_BIAS, FORCE- open\r\n" );
+            } else if( rtd0.status( ) & MAX31865_FAULT_RTDIN_FORCE ) {
+                printf( "RTDIN- < 0.85 x V_BIAS, FORCE- open\r\n" );
+            } else if( rtd0.status( ) & MAX31865_FAULT_VOLTAGE ) {
+                printf( "Overvoltage/undervoltage fault\r\n");
+            } else {
+                printf( "Unknown fault; check connection\r\n" );
+            }
+        }
         
         //rtd 1 good
-        rtd1.read_all( );
-        temp1_buffer = (float)rtd1.temperature( );
-        if(temp1_buffer > -10.0 && temp1_buffer < 150.0){
-            temperature1 = temp1_buffer;
-        }
-        printf( " T1 = %f deg C \n\r",temperature1);
-        double resistance1 = rtd1.resistance();
-        printf("Resistance1 is %f \n", resistance1);
+        // if( rtd0.status( ) == 0 ) {
+        //     rtd1.read_all( );
+        //     temp1_buffer = (float)rtd1.temperature( );
+        //     if(temp1_buffer > -10.0 && temp1_buffer < 150.0){
+        //         temperature1 = temp1_buffer;
+        //     }
+        //     printf( " T1 = %f deg C \n\r",temperature1);
+        //     double resistance1 = rtd1.resistance();
+        //     printf("Resistance1 is %f \n", resistance1);
+        // }
 
         //need new board
         // rtd2.read_all( );
@@ -296,11 +299,15 @@ int main()
 
         if(can.read(rx_msg,0) && rx_msg.id == 0x632){
             boardEnable = rx_msg.data[0] - '0';
+            // enabled or disabled by receiving enable message
             // boardEnable = 0: enable reading
             // boardEnable = 1: halt reading
         }
         
         if(!boardEnable){
+            if(rtd0.status( ) != 0 ){
+                can.write(CANMessage(0x620, rtd0_can_buffer, 1)); // need to edit in error message
+            }
             can.write(CANMessage(0x620, rtd0_can_buffer, 5));
             can.write(CANMessage(0x620, rtd1_can_buffer, 5));
             //can.write(CANMessage(0x620, rtd2_can_buffer, 5));
