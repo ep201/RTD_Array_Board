@@ -1,5 +1,6 @@
 // This code is for a CAN receiver to test the signals that the RTD board sends.
 // This code DOES NOT go on the RTD board.
+// 
 #include "mbed.h"
 #include <cstdint>
 #include <cstdio>
@@ -15,7 +16,7 @@ void tick(void) {
 int main()
 {
     ticker.attach(&tick, 1ms);
-   CAN can(D10, D2);
+    CAN can(D10, D2);
     while (true) {
         
 
@@ -39,6 +40,7 @@ int main()
         char rtd5_rx_buffer [5];
         char rtd6_rx_buffer [5];
         char rtd7_rx_buffer [5];
+        char rtd_error_buffer [1];
         
         CANMessage rx_msg;
 
@@ -50,6 +52,7 @@ int main()
         float* rtd5_temperature_addr;
         float* rtd6_temperature_addr;
         float* rtd7_temperature_addr;
+        int* rtd_stauts_addr;
         //*rtd0_temperature_addr = 102.1;
         //set up test rx buffer to send message
         // for(int i = 0; i < 5; i++){
@@ -63,6 +66,14 @@ int main()
         // rtd0_temperature_addr = (float*)can_tx_buffer;
         //rtd0_temperature_addr = (float*)can_tx_buffer;
         //can.write(CANMessage(0x620, rtd0_can_buffer, 5));
+
+        if(can.read(rx_msg,0) && rx_msg.id == 0x633){
+            rtd_error_buffer[0] = rx_msg.data[0];
+            rtd_stauts_addr = (int*)rtd_error_buffer;
+            printf("error = %d\n", *rtd_stauts_addr);
+        }
+        // need to make this supercede the normal temperature transmits
+
         if(can.read(rx_msg,0) && rx_msg.id == 0x620 && rx_msg.data[4] == 0){
             rtd0_rx_buffer[0] = rx_msg.data[0];
             rtd0_rx_buffer[1] = rx_msg.data[1];
