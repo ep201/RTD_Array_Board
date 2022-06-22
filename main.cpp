@@ -59,6 +59,7 @@ int main()
     float temp7_buffer = 50;
     float temperature7 = 50;
     bool boardEnable = 0;
+    char rtdStatus = 0;
 
     int epochtime = 0;
     char epoch_buffer[11];
@@ -109,11 +110,13 @@ int main()
     //RTD4-7 are subarray 2
     
     while (1) {
-        
-
         // time_t seconds = time(NULL);
         // printf("%s\n\r", ctime(&seconds));
-         rtd0.read_all( );
+        rtdStatus = 0;
+        rtd0.read_all( );
+        if (rtdStatus == 0 && rtd0.status() != 0){
+            rtdStatus = rtd0.status();
+        }
         if( rtd0.status( ) == 0 ) {
             temp0_buffer = (float)rtd0.temperature( );
             if(temp0_buffer > -10.0 && temp0_buffer < 150.0){
@@ -122,7 +125,6 @@ int main()
             printf( " T0 = %f deg C \n\r",temperature0);
             float resistance0 = (float)rtd0.resistance();
             printf("Resistance0 is %f \n", resistance0);
- 
         } 
         
         else
@@ -145,19 +147,42 @@ int main()
             }
         }
         
-        //rtd 1 good
-        // if( rtd0.status( ) == 0 ) {
-        //     rtd1.read_all( );
-        //     temp1_buffer = (float)rtd1.temperature( );
-        //     if(temp1_buffer > -10.0 && temp1_buffer < 150.0){
-        //         temperature1 = temp1_buffer;
-        //     }
-        //     printf( " T1 = %f deg C \n\r",temperature1);
-        //     double resistance1 = rtd1.resistance();
-        //     printf("Resistance1 is %f \n", resistance1);
-        // }
+        // rtd 1 good
+        rtd1.read_all( );
+        if (rtdStatus == 0 && rtd1.status() != 0){
+            rtdStatus = rtd1.status();
+        }
 
-        //need new board
+        if( rtd1.status( ) == 0 ) {
+            temp1_buffer = (float)rtd1.temperature( );
+            if(temp1_buffer > -10.0 && temp1_buffer < 150.0){
+                temperature1 = temp1_buffer;
+            }
+            printf( " T1 = %f deg C \n\r",temperature1);
+            double resistance1 = rtd1.resistance();
+            printf("Resistance1 is %f \n", resistance1);
+        }
+
+        else{
+            printf( "RTD fault register: %d :\r\n",rtd1.status( ));
+            if( rtd1.status( ) & MAX31865_FAULT_HIGH_THRESHOLD ) {
+                printf( "RTD high threshold exceeded\r\n" );
+            } else if( rtd1.status( ) & MAX31865_FAULT_LOW_THRESHOLD ) {
+                printf( "RTD low threshold exceeded\r\n" );
+            } else if( rtd1.status( ) & MAX31865_FAULT_REFIN ) {
+                printf( "REFIN- > 0.85 x V_BIAS\r\n" );
+            } else if( rtd1.status( ) & MAX31865_FAULT_REFIN_FORCE ) {
+                printf( "REFIN- < 0.85 x V_BIAS, FORCE- open\r\n" );
+            } else if( rtd1.status( ) & MAX31865_FAULT_RTDIN_FORCE ) {
+                printf( "RTDIN- < 0.85 x V_BIAS, FORCE- open\r\n" );
+            } else if( rtd1.status( ) & MAX31865_FAULT_VOLTAGE ) {
+                printf( "Overvoltage/undervoltage fault\r\n");
+            } else {
+                printf( "Unknown fault; check connection\r\n" );
+            }
+        }
+
+        //need new board, pads are fried
         // rtd2.read_all( );
         // temp2_buffer = rtd2.temperature( );
         // if(temp2_buffer > -10.0 && temp2_buffer < 150.0){
@@ -168,63 +193,184 @@ int main()
         // printf("Resistance2 is %f \n", resistance2);
 
         //rtd3 is good
-        // rtd3.read_all( );
-        // temp3_buffer = rtd3.temperature( );
-        // if(temp3_buffer > -10.0 && temp3_buffer < 150.0){
-        //     temperature3 = temp3_buffer;
-        // }
-        // printf( " T3 = %f deg C \n\r",temperature3);
-        // double resistance3 = rtd3.resistance();
-        // printf("Resistance3 is %f \n", resistance3);        
-        
-        
-        // rtd4.read_all( );   //rtd4 is good
-        // temp4_buffer = rtd4.temperature( );
-        // if(temp4_buffer > -10.0 && temp4_buffer < 150.0){
-        //     temperature4 = temp4_buffer;
-        // }
-        // printf( " T4 = %f deg C \n\r",temperature4);
-        // double resistance4 = rtd4.resistance();
-        // printf("Resistance4 is %f \n", resistance4);
+        rtd3.read_all( );
 
-        
-        // // rtd5 is good
-        // rtd5.read_all( );
-        // temp5_buffer = rtd5.temperature( );
-        // if(temp5_buffer > -10.0 && temp5_buffer < 150.0){
-        //     temperature5 = temp5_buffer;
-        // }
-        // printf( " T5 = %f deg C \n\r",temperature5);
-        // double resistance5 = rtd5.resistance();
-        // printf("Resistance5 is %f \n", resistance5);
+        if (rtdStatus == 0 && rtd3.status() != 0){
+            rtdStatus = rtd3.status();
+        }
 
+        if( rtd3.status( ) == 0 ) {
+           temp3_buffer = rtd3.temperature( );
+            if(temp3_buffer > -10.0 && temp3_buffer < 150.0){
+                temperature3 = temp3_buffer;
+            }
+            printf( " T3 = %f deg C \n\r",temperature3);
+            double resistance3 = rtd3.resistance();
+            printf("Resistance3 is %f \n", resistance3);  
+        }
+
+        else{
+            printf( "RTD fault register: %d :\r\n",rtd3.status( ));
+            if( rtd3.status( ) & MAX31865_FAULT_HIGH_THRESHOLD ) {
+                printf( "RTD high threshold exceeded\r\n" );
+            } else if( rtd3.status( ) & MAX31865_FAULT_LOW_THRESHOLD ) {
+                printf( "RTD low threshold exceeded\r\n" );
+            } else if( rtd3.status( ) & MAX31865_FAULT_REFIN ) {
+                printf( "REFIN- > 0.85 x V_BIAS\r\n" );
+            } else if( rtd3.status( ) & MAX31865_FAULT_REFIN_FORCE ) {
+                printf( "REFIN- < 0.85 x V_BIAS, FORCE- open\r\n" );
+            } else if( rtd3.status( ) & MAX31865_FAULT_RTDIN_FORCE ) {
+                printf( "RTDIN- < 0.85 x V_BIAS, FORCE- open\r\n" );
+            } else if( rtd3.status( ) & MAX31865_FAULT_VOLTAGE ) {
+                printf( "Overvoltage/undervoltage fault\r\n");
+            } else {
+                printf( "Unknown fault; check connection\r\n" );
+            }
+        }       
+        
+        //rtd4 is good
+
+        rtd4.read_all( );
+        if (rtdStatus == 0 && rtd4.status() != 0){
+            rtdStatus = rtd4.status();
+        }
+
+        if( rtd4.status( ) == 0 ) {
+            temp4_buffer = rtd4.temperature( );
+            if(temp4_buffer > -10.0 && temp4_buffer < 150.0){
+                temperature4 = temp4_buffer;
+            }
+            printf( " T4 = %f deg C \n\r",temperature4);
+            double resistance4 = rtd4.resistance();
+            printf("Resistance4 is %f \n", resistance4);
+        }
+        
+        else{
+            printf( "RTD fault register: %d :\r\n",rtd4.status( ));
+            if( rtd4.status( ) & MAX31865_FAULT_HIGH_THRESHOLD ) {
+                printf( "RTD high threshold exceeded\r\n" );
+            } else if( rtd4.status( ) & MAX31865_FAULT_LOW_THRESHOLD ) {
+                printf( "RTD low threshold exceeded\r\n" );
+            } else if( rtd4.status( ) & MAX31865_FAULT_REFIN ) {
+                printf( "REFIN- > 0.85 x V_BIAS\r\n" );
+            } else if( rtd4.status( ) & MAX31865_FAULT_REFIN_FORCE ) {
+                printf( "REFIN- < 0.85 x V_BIAS, FORCE- open\r\n" );
+            } else if( rtd4.status( ) & MAX31865_FAULT_RTDIN_FORCE ) {
+                printf( "RTDIN- < 0.85 x V_BIAS, FORCE- open\r\n" );
+            } else if( rtd4.status( ) & MAX31865_FAULT_VOLTAGE ) {
+                printf( "Overvoltage/undervoltage fault\r\n");
+            } else {
+                printf( "Unknown fault; check connection\r\n" );
+            }
+        } 
+
+        // rtd5 is good
+        rtd5.read_all( );
+        if (rtdStatus == 0 && rtd5.status() != 0){
+            rtdStatus = rtd5.status();
+        }
+
+        if( rtd5.status( ) == 0 ) {
+            temp5_buffer = rtd5.temperature( );
+            if(temp5_buffer > -10.0 && temp5_buffer < 150.0){
+                temperature5 = temp5_buffer;
+            }
+            printf( " T5 = %f deg C \n\r",temperature5);
+            double resistance5 = rtd5.resistance();
+            printf("Resistance5 is %f \n", resistance5);
+        }
+
+        else{
+            printf( "RTD fault register: %d :\r\n",rtd3.status( ));
+            if( rtd5.status( ) & MAX31865_FAULT_HIGH_THRESHOLD ) {
+                printf( "RTD high threshold exceeded\r\n" );
+            } else if( rtd5.status( ) & MAX31865_FAULT_LOW_THRESHOLD ) {
+                printf( "RTD low threshold exceeded\r\n" );
+            } else if( rtd5.status( ) & MAX31865_FAULT_REFIN ) {
+                printf( "REFIN- > 0.85 x V_BIAS\r\n" );
+            } else if( rtd5.status( ) & MAX31865_FAULT_REFIN_FORCE ) {
+                printf( "REFIN- < 0.85 x V_BIAS, FORCE- open\r\n" );
+            } else if( rtd5.status( ) & MAX31865_FAULT_RTDIN_FORCE ) {
+                printf( "RTDIN- < 0.85 x V_BIAS, FORCE- open\r\n" );
+            } else if( rtd5.status( ) & MAX31865_FAULT_VOLTAGE ) {
+                printf( "Overvoltage/undervoltage fault\r\n");
+            } else {
+                printf( "Unknown fault; check connection\r\n" );
+            }
+        } 
         // // rtd6 is good
-        // rtd6.read_all( );
-        // temp6_buffer = rtd6.temperature( );
-        // if(temp6_buffer > -10.0 && temp6_buffer < 150.0){
-        //     temperature6 = temp6_buffer;
-        // }
-        // printf( " T6 = %f deg C \n\r",temperature6);
-        // double resistance6 = rtd6.resistance();
-        // printf("Resistance6 is %f \n", resistance6);
+        rtd6.read_all( );
+        if (rtdStatus == 0 && rtd6.status() != 0){
+            rtdStatus = rtd6.status();
+        }
+
+        if( rtd6.status( ) == 0 ) {
+            temp6_buffer = rtd6.temperature( );
+            if(temp6_buffer > -10.0 && temp6_buffer < 150.0){
+                temperature6 = temp6_buffer;
+            }
+            printf( " T6 = %f deg C \n\r",temperature6);
+            double resistance6 = rtd6.resistance();
+            printf("Resistance6 is %f \n", resistance6);
+        }
+
+        else{
+            printf( "RTD fault register: %d :\r\n",rtd3.status( ));
+            if( rtd6.status( ) & MAX31865_FAULT_HIGH_THRESHOLD ) {
+                printf( "RTD high threshold exceeded\r\n" );
+            } else if( rtd6.status( ) & MAX31865_FAULT_LOW_THRESHOLD ) {
+                printf( "RTD low threshold exceeded\r\n" );
+            } else if( rtd6.status( ) & MAX31865_FAULT_REFIN ) {
+                printf( "REFIN- > 0.85 x V_BIAS\r\n" );
+            } else if( rtd6.status( ) & MAX31865_FAULT_REFIN_FORCE ) {
+                printf( "REFIN- < 0.85 x V_BIAS, FORCE- open\r\n" );
+            } else if( rtd6.status( ) & MAX31865_FAULT_RTDIN_FORCE ) {
+                printf( "RTDIN- < 0.85 x V_BIAS, FORCE- open\r\n" );
+            } else if( rtd6.status( ) & MAX31865_FAULT_VOLTAGE ) {
+                printf( "Overvoltage/undervoltage fault\r\n");
+            } else {
+                printf( "Unknown fault; check connection\r\n" );
+            }
+        }
 
         // // rtd7 is good
-        // rtd7.read_all( );
-        // temp7_buffer = rtd7.temperature( );
-        // if(temp7_buffer > -10.0 && temp7_buffer < 150.0){
-        //     temperature7 = temp7_buffer;
-        // }
-        // printf( " T7 = %f deg C \n\r",temperature7);
-        // double resistance7 = rtd7.resistance();
-        // printf("Resistance7 is %f \n", resistance7);
-        
+        rtd7.read_all( );
+        if (rtdStatus == 0 && rtd7.status() != 0){
+            rtdStatus = rtd7.status();
+        }
+
+        if( rtd7.status( ) == 0 ) {
+            temp7_buffer = rtd7.temperature( );
+            if(temp7_buffer > -10.0 && temp7_buffer < 150.0){
+                temperature7 = temp7_buffer;
+            }
+            printf( " T7 = %f deg C \n\r",temperature7);
+            double resistance7 = rtd7.resistance();
+            printf("Resistance7 is %f \n", resistance7);
+        }
+
+        else{
+            printf( "RTD fault register: %d :\r\n",rtd3.status( ));
+            if( rtd6.status( ) & MAX31865_FAULT_HIGH_THRESHOLD ) {
+                printf( "RTD high threshold exceeded\r\n" );
+            } else if( rtd6.status( ) & MAX31865_FAULT_LOW_THRESHOLD ) {
+                printf( "RTD low threshold exceeded\r\n" );
+            } else if( rtd6.status( ) & MAX31865_FAULT_REFIN ) {
+                printf( "REFIN- > 0.85 x V_BIAS\r\n" );
+            } else if( rtd6.status( ) & MAX31865_FAULT_REFIN_FORCE ) {
+                printf( "REFIN- < 0.85 x V_BIAS, FORCE- open\r\n" );
+            } else if( rtd6.status( ) & MAX31865_FAULT_RTDIN_FORCE ) {
+                printf( "RTDIN- < 0.85 x V_BIAS, FORCE- open\r\n" );
+            } else if( rtd6.status( ) & MAX31865_FAULT_VOLTAGE ) {
+                printf( "Overvoltage/undervoltage fault\r\n");
+            } else {
+                printf( "Unknown fault; check connection\r\n" );
+            }
+        }
 
         printf("\n");
         //CAN transmit code; 40-bit message, [39:32] are RTD ID (0 through 7), [31:0] are 32-bit temp val
-
         //create CAN message for rtd0
-        //try uint8_t
-
         // initialize
         char* rtd0_temp_array = (char*) &temperature0; //CAN sends by bytes, so cast temp as array of chars (bytes)
         char* rtd1_temp_array = (char*) &temperature1;
@@ -242,6 +388,7 @@ int main()
         char rtd5_can_buffer [5];
         char rtd6_can_buffer [5];
         char rtd7_can_buffer [5];
+        char rtd_error_can_buffer [1];
         rtd0_can_buffer[4] = 0;
         rtd1_can_buffer[4] = 1;
         rtd2_can_buffer[4] = 2;
@@ -250,52 +397,47 @@ int main()
         rtd5_can_buffer[4] = 5;
         rtd6_can_buffer[4] = 6;
         rtd7_can_buffer[4] = 7;
+        rtd_error_can_buffer[0] = rtdStatus;
 
         //rtd0
         for(int i = 0; i < 4; i++){
             rtd0_can_buffer[i] = rtd0_temp_array[i];    //populate CAN buffer with temp values
         }
 
-        // printf("buffer[0] = %x\n", rtd0_can_buffer[0]);
-        // printf("buffer[1] = %x\n", rtd0_can_buffer[1]);
-        // printf("buffer[2] = %x\n", rtd0_can_buffer[2]);
-        // printf("buffer[3] = %x\n", rtd0_can_buffer[3]);
-        // printf("buffer test: %f\n", *(float*)rtd0_can_buffer);
-
         //rtd1
         for(int i = 0; i < 4; i++){
             rtd1_can_buffer[i] = rtd1_temp_array[i];
         }
 
-        //rtd2
+        // rtd2
         // for(int i = 0; i < 4; i++){
         //     rtd2_can_buffer[i] = rtd2_temp_array[i];
         // }
 
         //rtd3
-        // for(int i = 0; i < 4; i++){
-        //     rtd3_can_buffer[i] = rtd3_temp_array[i];
-        // }
+        for(int i = 0; i < 4; i++){
+            rtd3_can_buffer[i] = rtd3_temp_array[i];
+        }
 
         //rtd4
-        // for(int i = 0; i < 4; i++){
-        //     rtd4_can_buffer[i] = rtd4_temp_array[i];
-        // }
+        for(int i = 0; i < 4; i++){
+            rtd4_can_buffer[i] = rtd4_temp_array[i];
+        }
 
         //rtd5
-        // for(int i = 0; i < 4; i++){
-        //     rtd5_can_buffer[i] = rtd5_temp_array[i];
-        // }
+        for(int i = 0; i < 4; i++){
+            rtd5_can_buffer[i] = rtd5_temp_array[i];
+        }
 
         //rtd6
-        // for(int i = 0; i < 4; i++){
-        //     rtd6_can_buffer[i] = rtd6_temp_array[i];
-        // }
+        for(int i = 0; i < 4; i++){
+            rtd6_can_buffer[i] = rtd6_temp_array[i];
+        }
 
-        //rtd7
-        // for(int i = 0; i < 4; i++){
-        //     rtd7_can_buffer[i] = rtd7_temp_array[i];
-        // }
+        // rtd7
+        for(int i = 0; i < 4; i++){
+            rtd7_can_buffer[i] = rtd7_temp_array[i];
+        }
 
         if(can.read(rx_msg,0) && rx_msg.id == 0x632){
             boardEnable = rx_msg.data[0] - '0';
@@ -306,16 +448,19 @@ int main()
         
         if(!boardEnable){
             if(rtd0.status( ) != 0 ){
-                can.write(CANMessage(0x620, rtd0_can_buffer, 1)); // need to edit in error message
+                can.write(CANMessage(0x633, rtd_error_can_buffer, 1));
             }
-            can.write(CANMessage(0x620, rtd0_can_buffer, 5));
-            can.write(CANMessage(0x620, rtd1_can_buffer, 5));
-            //can.write(CANMessage(0x620, rtd2_can_buffer, 5));
-            //can.write(CANMessage(0x620, rtd3_can_buffer, 5));
-            //can.write(CANMessage(0x620, rtd4_can_buffer, 5));
-            //can.write(CANMessage(0x620, rtd5_can_buffer, 5));
-            //can.write(CANMessage(0x620, rtd6_can_buffer, 5));
-            //can.write(CANMessage(0x620, rtd7_can_buffer, 5));
+            else{
+                can.write(CANMessage(0x620, rtd0_can_buffer, 5));
+                can.write(CANMessage(0x620, rtd1_can_buffer, 5));
+                //can.write(CANMessage(0x620, rtd2_can_buffer, 5));
+                can.write(CANMessage(0x620, rtd3_can_buffer, 5));
+                can.write(CANMessage(0x620, rtd4_can_buffer, 5));
+                can.write(CANMessage(0x620, rtd5_can_buffer, 5));
+                can.write(CANMessage(0x620, rtd6_can_buffer, 5));
+                can.write(CANMessage(0x620, rtd7_can_buffer, 5));
+            }
+            
         }
         osDelay(500);
  
